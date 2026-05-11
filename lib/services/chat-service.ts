@@ -18,6 +18,13 @@ interface ToolCall {
   };
 }
 
+interface OrderReceipt {
+  orderId: string;
+  items: { name: string; quantity: number; price: number }[];
+  total: number;
+  status: "confirmed" | "pending" | "delivered";
+}
+
 export async function processUserMessage(
   userText: string,
   messageHistory: Message[] = [],
@@ -50,6 +57,7 @@ export async function processUserMessage(
 
   // 2. Primera llamada a Qwen (le pasamos el mensaje y las herramientas disponibles)
   let aiResponse = await callQwen(messages, farmaciaTools);
+  let orderReceipt: OrderReceipt | undefined = undefined;
 
   // 3. Verificamos si Qwen decidió llamar a una función (Tool Calling)
   if (aiResponse.tool_calls && aiResponse.tool_calls.length > 0) {
@@ -65,9 +73,32 @@ export async function processUserMessage(
       // 4. Ejecutamos nuestra lógica de negocio local
       try {
         if (functionName === "consultar_inventario") {
-          functionResult = await checkStock(args.searchTerm);
+          const stockResult = await checkStock(args.searchTerm);
+          functionResult = stockResult as unknown as Record<string, unknown>;
         } else if (functionName === "generar_orden_entrega") {
-          functionResult = await processDeliveryOrder(args.productId, args.quantity);
+          const orderResult = await processDeliveryOrder(args.productId, args.quantity);
+          functionResult = orderResult as unknown as Record<string, unknown>;
+          
+          // Generate order receipt if successful
+          if (orderResult.success) {
+            const products = await checkStock("");
+            const product = products.find((p) => p.id === args.productId);
+            if (product) {
+              const itemTotal = product.price * args.quantity;
+              orderReceipt = {
+                orderId: `ORD-${Date.now().toString(36).toUpperCase()}`,
+                items: [
+                  {
+                    name: product.name,
+                    quantity: args.quantity,
+                    price: itemTotal,
+                  },
+                ],
+                total: itemTotal,
+                status: "confirmed",
+              };
+            }
+          }
         }
       } catch (error) {
         functionResult = { error: error instanceof Error ? error.message : "Error desconocido" };
@@ -91,5 +122,6 @@ export async function processUserMessage(
   return {
     reply: aiResponse.content,
     updatedHistory: messages.filter((m) => m.role !== "system"), // Ocultamos el system prompt al frontend
+    orderReceipt,
   };
 }
