@@ -129,8 +129,8 @@ async function startServer() {
         log('info', 'Endpoint de debug habilitado en /api/debug');
     }
 
-    // 5. Manejo de rutas no encontradas
-    app.use('*', (req, res) => {
+    // 5. Manejo de rutas no encontradas (Express 5 compatible)
+    app.use((req, res) => {
         res.status(404).json({
             success: false,
             error: 'Ruta no encontrada',

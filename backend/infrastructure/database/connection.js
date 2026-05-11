@@ -10,21 +10,22 @@ function logDbConfig() {
     console.log(`   - Host: ${process.env.DB_HOST || 'NO CONFIGURADO'}`);
     console.log(`   - Usuario: ${process.env.DB_USER || 'NO CONFIGURADO'}`);
     console.log(`   - Base de datos: ${process.env.DB_NAME || 'NO CONFIGURADO'}`);
-    console.log(`   - Password: ${process.env.DB_PASSWORD ? '***configurado***' : 'NO CONFIGURADO'}`);
+    console.log(`   - Password: ${process.env.DB_PASSWORD ? '***configurado***' : '(vacio - XAMPP local)'}`);
 }
 
 // Check if required environment variables are set
+// Note: DB_PASSWORD is optional for local XAMPP setups that use empty password
 function validateDbConfig() {
-    const requiredVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+    const requiredVars = ['DB_HOST', 'DB_USER', 'DB_NAME'];
     const missingVars = requiredVars.filter(v => !process.env[v]);
     
     if (missingVars.length > 0) {
         console.warn(`⚠️ Variables de BD faltantes: ${missingVars.join(', ')}`);
         console.warn('   Crea un archivo .env con las siguientes variables:');
         console.warn('   DB_HOST=localhost');
-        console.warn('   DB_USER=tu_usuario');
-        console.warn('   DB_PASSWORD=tu_password');
-        console.warn('   DB_NAME=farmacia_ai');
+        console.warn('   DB_USER=root');
+        console.warn('   DB_PASSWORD=         # Opcional para XAMPP');
+        console.warn('   DB_NAME=pharmacy_ai_demo');
         return false;
     }
     return true;
@@ -39,7 +40,7 @@ if (validateDbConfig()) {
     pool = mysql.createPool({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
+        password: process.env.DB_PASSWORD || '', // Empty password for XAMPP
         database: process.env.DB_NAME,
         waitForConnections: true,
         connectionLimit: 10,
@@ -62,7 +63,7 @@ if (validateDbConfig()) {
     // Create a mock pool that throws helpful errors
     pool = {
         query: async () => {
-            throw new Error('Base de datos no configurada. Por favor configura las variables de entorno DB_HOST, DB_USER, DB_PASSWORD, y DB_NAME');
+            throw new Error('Base de datos no configurada. Por favor configura las variables de entorno DB_HOST, DB_USER, y DB_NAME en tu archivo .env');
         },
         getConnection: async () => {
             throw new Error('Base de datos no configurada');
