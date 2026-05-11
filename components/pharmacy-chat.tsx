@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MessageSquare, Menu, X } from "lucide-react";
+import { Activity, Menu, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatInput } from "./chat-input";
@@ -184,7 +184,7 @@ export function PharmacyChat() {
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
+        <header className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <Button
             variant="ghost"
             size="icon"
@@ -193,13 +193,14 @@ export function PharmacyChat() {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
+              <Activity className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground text-sm">
+              <h2 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
                 Chat Inteligente
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
               </h2>
               <p className="text-xs text-muted-foreground">
                 Asistente de farmacia con IA
@@ -207,10 +208,10 @@ export function PharmacyChat() {
             </div>
           </div>
           <div className="ml-auto">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
               <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                En línea
+              <span className="text-xs font-medium text-success hidden sm:inline">
+                En linea
               </span>
             </div>
           </div>

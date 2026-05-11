@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, type KeyboardEvent, type ChangeEvent } from "react";
-import { Paperclip, Send, X, FileText, ImageIcon } from "lucide-react";
+import { Paperclip, Send, X, FileText, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -57,18 +57,18 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
   };
 
   return (
-    <div className="p-4 border-t border-border bg-card">
+    <div className="p-4 border-t border-border bg-card/80 backdrop-blur-sm">
       {attachedFile && (
         <div className="mb-3">
-          <div className="inline-flex items-center gap-2 p-2 bg-secondary rounded-lg border border-border">
+          <div className="inline-flex items-center gap-3 p-2.5 bg-gradient-to-r from-secondary to-secondary/80 rounded-xl border border-border shadow-sm">
             {filePreview ? (
               <img
                 src={filePreview}
                 alt="Preview"
-                className="w-12 h-12 object-cover rounded"
+                className="w-14 h-14 object-cover rounded-lg border border-border"
               />
             ) : (
-              <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center">
+              <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
                 {attachedFile.type === "application/pdf" ? (
                   <FileText className="w-6 h-6 text-primary" />
                 ) : (
@@ -76,18 +76,18 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
                 )}
               </div>
             )}
-            <div className="flex-1 min-w-0 max-w-[150px]">
-              <p className="text-xs font-medium text-foreground truncate">
+            <div className="flex-1 min-w-0 max-w-[180px]">
+              <p className="text-sm font-medium text-foreground truncate">
                 {attachedFile.name}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {(attachedFile.size / 1024).toFixed(1)} KB
               </p>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 shrink-0"
+              className="h-7 w-7 shrink-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
               onClick={removeFile}
             >
               <X className="w-4 h-4" />
@@ -108,7 +108,7 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         <Button
           variant="outline"
           size="icon"
-          className="shrink-0 h-10 w-10"
+          className="shrink-0 h-11 w-11 rounded-xl border-border hover:bg-primary/5 hover:border-primary/30 transition-colors"
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
         >
@@ -121,10 +121,11 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje... (Shift+Enter para nueva línea)"
+          placeholder="Escribe tu mensaje... (Shift+Enter para nueva linea)"
           className={cn(
-            "flex-1 min-h-[42px] max-h-[120px] resize-none bg-input",
-            "focus-visible:ring-primary"
+            "flex-1 min-h-[44px] max-h-[120px] resize-none bg-input rounded-xl border-border",
+            "focus-visible:ring-primary/30 focus-visible:border-primary/50",
+            "placeholder:text-muted-foreground/70"
           )}
           rows={1}
           disabled={isLoading}
@@ -133,9 +134,17 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         <Button
           onClick={handleSend}
           disabled={(!message.trim() && !attachedFile) || isLoading}
-          className="shrink-0 h-10 px-4"
+          className={cn(
+            "shrink-0 h-11 px-5 rounded-xl shadow-sm transition-all",
+            "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
+            "disabled:opacity-50"
+          )}
         >
-          <Send className="w-4 h-4" />
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
           <span className="sr-only">Enviar mensaje</span>
         </Button>
       </div>

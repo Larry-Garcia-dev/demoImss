@@ -1,15 +1,23 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
-  title: 'PharmAssist AI - Pharmacy Assistant',
-  description: 'AI-powered pharmacy assistant for inventory management and customer service',
+  title: 'PharmAssist AI - Asistente de Farmacia Inteligente',
+  description: 'Asistente de farmacia con inteligencia artificial para gestión de inventario, consultas de medicamentos y procesamiento de recetas médicas.',
   generator: 'v0.app',
+  keywords: ['farmacia', 'AI', 'inventario', 'medicamentos', 'asistente', 'salud'],
   icons: {
     icon: [
       {
@@ -29,13 +37,19 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#0891b2',
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="es" className={`bg-background ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased min-h-screen">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       success: true,
       reply: result.reply,
       history: result.updatedHistory,
+      orderReceipt: result.orderReceipt,
     });
   } catch (error) {
     console.error("Error en la API de chat:", error);

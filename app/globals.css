@@ -4,42 +4,43 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.005 200);
-  --foreground: oklch(0.20 0.02 230);
+  /* Medical/Healthcare Color Palette - Whites, Soft Blues, Teals */
+  --background: oklch(0.985 0.003 210);
+  --foreground: oklch(0.18 0.02 220);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.02 230);
+  --card-foreground: oklch(0.18 0.02 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.02 230);
-  --primary: oklch(0.55 0.15 195);
+  --popover-foreground: oklch(0.18 0.02 220);
+  --primary: oklch(0.52 0.14 200);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.94 0.02 200);
-  --secondary-foreground: oklch(0.30 0.02 230);
-  --muted: oklch(0.96 0.01 200);
-  --muted-foreground: oklch(0.50 0.02 230);
-  --accent: oklch(0.65 0.12 175);
+  --secondary: oklch(0.96 0.015 200);
+  --secondary-foreground: oklch(0.28 0.02 220);
+  --muted: oklch(0.97 0.008 210);
+  --muted-foreground: oklch(0.48 0.02 220);
+  --accent: oklch(0.58 0.12 180);
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.90 0.02 200);
-  --input: oklch(0.95 0.01 200);
-  --ring: oklch(0.55 0.15 195);
-  --chart-1: oklch(0.55 0.15 195);
-  --chart-2: oklch(0.65 0.12 175);
+  --border: oklch(0.92 0.015 205);
+  --input: oklch(0.97 0.008 210);
+  --ring: oklch(0.52 0.14 200);
+  --chart-1: oklch(0.52 0.14 200);
+  --chart-2: oklch(0.58 0.12 180);
   --chart-3: oklch(0.45 0.10 220);
-  --chart-4: oklch(0.70 0.08 180);
-  --chart-5: oklch(0.60 0.14 200);
-  --radius: 0.75rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.20 0.02 230);
-  --sidebar-primary: oklch(0.55 0.15 195);
+  --chart-4: oklch(0.68 0.08 185);
+  --chart-5: oklch(0.55 0.14 195);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.99 0.002 210);
+  --sidebar-foreground: oklch(0.18 0.02 220);
+  --sidebar-primary: oklch(0.52 0.14 200);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.02 200);
-  --sidebar-accent-foreground: oklch(0.30 0.02 230);
-  --sidebar-border: oklch(0.90 0.02 200);
-  --sidebar-ring: oklch(0.55 0.15 195);
-  --warning: oklch(0.75 0.15 65);
-  --warning-foreground: oklch(0.25 0.05 65);
-  --success: oklch(0.60 0.15 155);
+  --sidebar-accent: oklch(0.96 0.015 200);
+  --sidebar-accent-foreground: oklch(0.28 0.02 220);
+  --sidebar-border: oklch(0.92 0.015 205);
+  --sidebar-ring: oklch(0.52 0.14 200);
+  --warning: oklch(0.78 0.14 70);
+  --warning-foreground: oklch(0.30 0.06 70);
+  --success: oklch(0.58 0.14 165);
   --success-foreground: oklch(1 0 0);
 }
 
@@ -79,8 +80,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
