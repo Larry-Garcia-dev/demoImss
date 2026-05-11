@@ -1,0 +1,34 @@
+# Dependencias de Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno (Contiene tu DASHSCOPE_API_KEY y DB_PASSWORD)
+.env
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Carpetas de compilación o temporales
+dist/
+build/
+.cache/
+
+# Si por alguna razón decides guardar archivos localmente en el futuro
+public/uploads/*
+!public/uploads/.gitkeep
+
+
+# .env.example
+# PORT=3000
+# DB_HOST=localhost
+# DB_USER=root
+# DB_PASSWORD=
+# DB_NAME=pharmacy_ai_demo
+# DASHSCOPE_API_KEY=tu_api_key_aqui

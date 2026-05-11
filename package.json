@@ -1,0 +1,16 @@
+{
+  "name": "farmacia-ai-backend",
+  "version": "1.0.0",
+  "description": "API Backend para Farmacia con IA (Qwen 3.0 Max)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.3"
+  }
+}
