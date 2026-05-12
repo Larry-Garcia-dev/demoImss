@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './infrastructure/database/initDB.js';
 import chatRoutes from './presentation/routes/chatRoutes.js';
+import inventoryRoutes from './presentation/routes/inventoryRoutes.js';
 
 dotenv.config();
 
@@ -88,6 +89,10 @@ async function startServer() {
     app.use('/api/chat', chatRoutes);
     log('info', 'Rutas de chat montadas en /api/chat');
 
+    // 3. Montar rutas de inventario
+    app.use('/api/inventory', inventoryRoutes);
+    log('info', 'Rutas de inventario montadas en /api/inventory');
+
     // 3. Ruta de salud con información detallada
     app.get('/api/health', (req, res) => {
         const healthInfo = {
@@ -99,6 +104,7 @@ async function startServer() {
             version: '1.0.0',
             endpoints: {
                 chat: '/api/chat',
+                inventory: '/api/inventory',
                 health: '/api/health'
             },
             config: {
@@ -135,7 +141,7 @@ async function startServer() {
             success: false,
             error: 'Ruta no encontrada',
             path: req.originalUrl,
-            availableEndpoints: ['/api/chat', '/api/health']
+            availableEndpoints: ['/api/chat', '/api/inventory', '/api/health']
         });
     });
 
@@ -144,8 +150,9 @@ async function startServer() {
         console.log('\n' + '='.repeat(50));
         log('startup', `Servidor ejecutándose en http://localhost:${PORT}`);
         console.log('='.repeat(50));
-        console.log('\n📌 Endpoints disponibles:');
+        console.log('\n Endpoints disponibles:');
         console.log(`   POST http://localhost:${PORT}/api/chat`);
+        console.log(`   GET  http://localhost:${PORT}/api/inventory`);
         console.log(`   GET  http://localhost:${PORT}/api/health`);
         if (process.env.NODE_ENV !== 'production') {
             console.log(`   GET  http://localhost:${PORT}/api/debug`);
