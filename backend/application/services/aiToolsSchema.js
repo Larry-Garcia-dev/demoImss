@@ -40,5 +40,26 @@ export const farmaciaTools = [
                 required: ["quantity"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "actualizar_inventario",
+            description: "Actualiza el inventario de un medicamento sumando nuevas unidades al stock existente. Usa esta funcion cuando lleguen nuevas unidades de un producto.",
+            parameters: {
+                type: "object",
+                properties: {
+                    productName: {
+                        type: "string",
+                        description: "El nombre del medicamento a actualizar (ej. Ibuprofeno, Paracetamol)."
+                    },
+                    quantity: {
+                        type: "integer",
+                        description: "La cantidad de unidades NUEVAS a agregar al stock actual."
+                    }
+                },
+                required: ["productName", "quantity"]
+            }
+        }
     }
 ];

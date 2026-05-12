@@ -123,12 +123,14 @@ Estado: ${status.label}
 ────────────────────────────────────────────
                   DETALLE
 ────────────────────────────────────────────
-${receipt.items.map(item => 
-`${item.name}
+${receipt.items.map(item => {
+  const unitPrice = Number(item.unitPrice) || Number(item.price) / Number(item.quantity) || 0;
+  const subtotal = Number(item.price) || 0;
+  return `${item.name}
   Cantidad: ${item.quantity} unidades
-  Precio unitario: $${(item.unitPrice || item.price / item.quantity).toFixed(2)}
-  Subtotal: $${item.price.toFixed(2)}`
-).join('\n\n')}
+  Precio unitario: $${unitPrice.toFixed(2)}
+  Subtotal: $${subtotal.toFixed(2)}`;
+}).join('\n\n')}
 
 ────────────────────────────────────────────
 TOTAL: $${receipt.total.toFixed(2)}
@@ -189,15 +191,18 @@ Stock restante: ${receipt.newStock} unidades
           <div><strong>Estado:</strong> <span class="status">${status.label}</span></div>
         </div>
         <div class="items">
-          ${receipt.items.map(item => `
+          ${receipt.items.map(item => {
+            const unitPrice = Number(item.unitPrice) || Number(item.price) / Number(item.quantity) || 0;
+            const subtotal = Number(item.price) || 0;
+            return `
             <div class="item">
               <div class="item-name">${item.name}</div>
-              <div class="item-detail">Cant: ${item.quantity} x $${(item.unitPrice || item.price / item.quantity).toFixed(2)}</div>
-              <div class="item-detail">Subtotal: $${item.price.toFixed(2)}</div>
+              <div class="item-detail">Cant: ${item.quantity} x $${unitPrice.toFixed(2)}</div>
+              <div class="item-detail">Subtotal: $${subtotal.toFixed(2)}</div>
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
-        <div class="total">TOTAL: $${receipt.total.toFixed(2)}</div>
+        <div class="total">TOTAL: $${Number(receipt.total || 0).toFixed(2)}</div>
         ${receipt.newStock !== undefined ? `<div class="info">Stock restante: ${receipt.newStock} unidades</div>` : ''}
         <div class="footer">
           <p>Gracias por su preferencia</p>
@@ -247,7 +252,7 @@ Stock restante: ${receipt.newStock} unidades
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               {item.name} <span className="text-muted-foreground">x{item.quantity}</span>
             </span>
-            <span className="font-medium tabular-nums">${item.price.toFixed(2)}</span>
+            <span className="font-medium tabular-nums">${Number(item.price || 0).toFixed(2)}</span>
           </div>
         ))}
       </div>
@@ -259,7 +264,7 @@ Stock restante: ${receipt.newStock} unidades
       <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
         <div>
           <span className="text-sm text-muted-foreground">Total</span>
-          <span className="text-lg font-bold text-primary tabular-nums ml-2">${receipt.total.toFixed(2)}</span>
+          <span className="text-lg font-bold text-primary tabular-nums ml-2">${Number(receipt.total || 0).toFixed(2)}</span>
         </div>
         <div className="flex gap-2">
           <Button 
