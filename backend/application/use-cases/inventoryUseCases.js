@@ -208,7 +208,74 @@ export async function processDeliveryOrder(productIdOrName, quantityToDeduct, pr
     }
 }
 
-// 5. Simular el envío de correo al proveedor
+// 5. Actualizar inventario (agregar stock)
+export async function updateInventoryStock(productName, quantityToAdd) {
+    log('inventory', `Actualizando inventario - Producto: ${productName}, Cantidad a agregar: ${quantityToAdd}`);
+    
+    try {
+        // Validar cantidad
+        if (!quantityToAdd || quantityToAdd <= 0) {
+            return {
+                success: false,
+                message: 'La cantidad a agregar debe ser mayor a 0.',
+                errorCode: 'INVALID_QUANTITY'
+            };
+        }
+
+        // Buscar producto por nombre
+        const [productRows] = await pool.query(
+            'SELECT * FROM products WHERE name LIKE ? LIMIT 1', 
+            [`%${productName}%`]
+        );
+        
+        if (productRows.length === 0) {
+            log('error', `Producto no encontrado: ${productName}`);
+            return { 
+                success: false, 
+                message: `Producto "${productName}" no encontrado en la base de datos.`,
+                errorCode: 'PRODUCT_NOT_FOUND'
+            };
+        }
+
+        const product = productRows[0];
+        const previousStock = product.stock;
+        const newStock = previousStock + quantityToAdd;
+        
+        // Actualizar el stock
+        await pool.query('UPDATE products SET stock = ? WHERE id = ?', [newStock, product.id]);
+        
+        log('success', `Inventario actualizado: ${product.name}`, {
+            previousStock,
+            added: quantityToAdd,
+            newStock
+        });
+
+        return { 
+            success: true, 
+            message: `Inventario actualizado exitosamente. Se agregaron ${quantityToAdd} unidades a ${product.name}.`,
+            productName: product.name,
+            previousStock,
+            addedQuantity: quantityToAdd,
+            newStock,
+            price: product.price
+        };
+        
+    } catch (error) {
+        log('error', 'Error actualizando inventario', {
+            productName,
+            quantityToAdd,
+            error: error.message
+        });
+        
+        return {
+            success: false,
+            message: `Error al actualizar inventario: ${error.message}`,
+            errorCode: 'UPDATE_ERROR'
+        };
+    }
+}
+
+// 6. Simular el envío de correo al proveedor
 function simulateSupplierEmail(productName, currentStock, alertLevel) {
     const urgency = alertLevel === 'CRITICO' ? 'MUY URGENTE' : 'URGENTE';
     

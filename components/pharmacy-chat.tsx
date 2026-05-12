@@ -8,6 +8,7 @@ import { ChatInput } from "./chat-input";
 import { ChatMessage, TypingIndicator, type Message, type OrderReceipt } from "./chat-message";
 import { InventorySidebar, type InventoryItem } from "./inventory-sidebar";
 import { InventoryPanel } from "./inventory-panel";
+import { SalesRecords } from "./sales-records";
 import { cn } from "@/lib/utils";
 
 // Backend API URL - uses Express backend on port 3000
@@ -55,6 +56,7 @@ export function PharmacyChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [salesRecords, setSalesRecords] = useState<OrderReceipt[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch inventory from Express backend API
@@ -99,6 +101,7 @@ export function PharmacyChat() {
   // Clear chat and start fresh conversation
   const clearChat = useCallback(() => {
     setMessages(INITIAL_MESSAGES);
+    setSalesRecords([]);
   }, []);
 
   const sendMessage = async (content: string, file: File | null) => {
@@ -146,6 +149,11 @@ export function PharmacyChat() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        
+        // If there's an order receipt, add it to sales records
+        if (data.orderReceipt) {
+          setSalesRecords((prev) => [data.orderReceipt, ...prev]);
+        }
         
         // Refresh inventory in case an order was processed
         fetchInventory();
@@ -267,6 +275,9 @@ export function PharmacyChat() {
 
         {/* Inventory Panel */}
         <InventoryPanel items={inventory} />
+
+        {/* Sales Records */}
+        <SalesRecords sales={salesRecords} />
 
         {/* Input */}
         <ChatInput onSend={sendMessage} isLoading={isLoading} />

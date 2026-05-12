@@ -1,6 +1,6 @@
 import { callQwen, logDebug } from '../../infrastructure/ai/qwenClient.js';
 import { farmaciaTools } from './aiToolsSchema.js';
-import { checkStock, processDeliveryOrder } from '../use-cases/inventoryUseCases.js';
+import { checkStock, processDeliveryOrder, updateInventoryStock } from '../use-cases/inventoryUseCases.js';
 
 export async function processUserMessage(userText, messageHistory = [], fileBase64URI = null) {
     const sessionId = `session_${Date.now().toString(36)}`;
@@ -35,6 +35,7 @@ REGLAS IMPORTANTES:
 Tienes acceso a estas herramientas:
 - consultar_inventario: Busca medicamentos en la base de datos por nombre o principio activo
 - generar_orden_entrega: Procesa una orden usando productName (nombre del medicamento) y quantity (cantidad)
+- actualizar_inventario: Agrega nuevas unidades al stock existente usando productName y quantity
 
 Cuando generes una orden exitosa, incluye en tu respuesta:
 - Nombre del producto
@@ -128,6 +129,13 @@ Responde siempre en español y de forma profesional.`
                                 newStock: functionResult.newStock
                             };
                         }
+                    } else if (functionName === 'actualizar_inventario') {
+                        functionResult = await updateInventoryStock(args.productName, args.quantity);
+                        logDebug('success', `[${sessionId}] Inventario actualizado`, {
+                            productName: args.productName,
+                            quantity: args.quantity,
+                            success: functionResult.success
+                        });
                     } else {
                         logDebug('warn', `[${sessionId}] Herramienta desconocida solicitada: ${functionName}`);
                         functionResult = { error: `Herramienta '${functionName}' no implementada` };
