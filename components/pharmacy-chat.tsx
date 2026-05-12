@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Activity, Menu, X, Sparkles } from "lucide-react";
+import { Activity, Menu, X, Sparkles, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatInput } from "./chat-input";
@@ -39,9 +39,19 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
+// Convert UI messages to API history format
+function buildHistoryFromMessages(messages: Message[]): { role: string; content: string }[] {
+  // Skip the initial assistant greeting message
+  return messages
+    .filter((msg, idx) => idx > 0) // Skip first message (greeting)
+    .map((msg) => ({
+      role: msg.role,
+      content: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
+    }));
+}
+
 export function PharmacyChat() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [history, setHistory] = useState<{ role: string; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -86,6 +96,11 @@ export function PharmacyChat() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
+  // Clear chat and start fresh conversation
+  const clearChat = useCallback(() => {
+    setMessages(INITIAL_MESSAGES);
+  }, []);
+
   const sendMessage = async (content: string, file: File | null) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -94,6 +109,9 @@ export function PharmacyChat() {
       timestamp: new Date(),
     };
 
+    // Build history from current messages BEFORE adding the new user message
+    const currentHistory = buildHistoryFromMessages(messages);
+    
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -108,7 +126,8 @@ export function PharmacyChat() {
         formData.append("file", file);
       }
       
-      formData.append("history", JSON.stringify(history));
+      // Send the conversation history for context
+      formData.append("history", JSON.stringify(currentHistory));
 
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: "POST",
@@ -127,7 +146,6 @@ export function PharmacyChat() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
-        setHistory(data.history || []);
         
         // Refresh inventory in case an order was processed
         fetchInventory();
@@ -207,10 +225,25 @@ export function PharmacyChat() {
               </h2>
               <p className="text-xs text-muted-foreground">
                 Asistente de farmacia con IA
+                {messages.length > 1 && (
+                  <span className="ml-2 text-muted-foreground/70">
+                    ({messages.length - 1} mensaje{messages.length > 2 ? "s" : ""})
+                  </span>
+                )}
               </p>
             </div>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChat}
+              className="text-muted-foreground hover:text-foreground"
+              title="Nueva conversacion"
+            >
+              <RotateCcw className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline text-xs">Nueva</span>
+            </Button>
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
               <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
               <span className="text-xs font-medium text-success hidden sm:inline">
