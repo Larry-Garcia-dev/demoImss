@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, User, Stethoscope } from "lucide-react";
+import { User, Stethoscope, Download, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface Message {
@@ -14,9 +15,12 @@ export interface Message {
 
 export interface OrderReceipt {
   orderId: string;
-  items: { name: string; quantity: number; price: number }[];
+  items: { name: string; quantity: number; price: number; unitPrice?: number }[];
   total: number;
   status: "confirmed" | "pending" | "delivered";
+  date?: string;
+  previousStock?: number;
+  newStock?: number;
 }
 
 interface ChatMessageProps {
@@ -103,6 +107,108 @@ function OrderReceiptCard({ receipt }: { receipt: OrderReceipt }) {
   };
 
   const status = statusConfig[receipt.status];
+  const receiptDate = receipt.date || new Date().toLocaleString("es-MX");
+
+  // Generate downloadable ticket as text file
+  const downloadTicket = () => {
+    const ticketContent = `
+════════════════════════════════════════════
+           FARMACIA AI - RECIBO DE ORDEN
+════════════════════════════════════════════
+
+Orden #: ${receipt.orderId}
+Fecha: ${receiptDate}
+Estado: ${status.label}
+
+────────────────────────────────────────────
+                  DETALLE
+────────────────────────────────────────────
+${receipt.items.map(item => 
+`${item.name}
+  Cantidad: ${item.quantity} unidades
+  Precio unitario: $${(item.unitPrice || item.price / item.quantity).toFixed(2)}
+  Subtotal: $${item.price.toFixed(2)}`
+).join('\n\n')}
+
+────────────────────────────────────────────
+TOTAL: $${receipt.total.toFixed(2)}
+────────────────────────────────────────────
+${receipt.newStock !== undefined ? `
+Stock restante: ${receipt.newStock} unidades
+` : ''}
+════════════════════════════════════════════
+        Gracias por su preferencia
+          PharmAssist AI System
+════════════════════════════════════════════
+    `.trim();
+
+    const blob = new Blob([ticketContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ticket-${receipt.orderId}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Print ticket
+  const printTicket = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ticket ${receipt.orderId}</title>
+        <style>
+          body { font-family: 'Courier New', monospace; padding: 20px; max-width: 300px; margin: 0 auto; }
+          .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .title { font-size: 16px; font-weight: bold; }
+          .subtitle { font-size: 12px; color: #666; }
+          .info { margin: 10px 0; font-size: 12px; }
+          .items { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; margin: 10px 0; }
+          .item { margin: 8px 0; }
+          .item-name { font-weight: bold; }
+          .item-detail { font-size: 11px; color: #666; margin-left: 10px; }
+          .total { font-size: 16px; font-weight: bold; text-align: right; margin-top: 10px; }
+          .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #666; }
+          .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: #e8f5e9; color: #2e7d32; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">FARMACIA AI</div>
+          <div class="subtitle">Recibo de Orden</div>
+        </div>
+        <div class="info">
+          <div><strong>Orden:</strong> #${receipt.orderId}</div>
+          <div><strong>Fecha:</strong> ${receiptDate}</div>
+          <div><strong>Estado:</strong> <span class="status">${status.label}</span></div>
+        </div>
+        <div class="items">
+          ${receipt.items.map(item => `
+            <div class="item">
+              <div class="item-name">${item.name}</div>
+              <div class="item-detail">Cant: ${item.quantity} x $${(item.unitPrice || item.price / item.quantity).toFixed(2)}</div>
+              <div class="item-detail">Subtotal: $${item.price.toFixed(2)}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="total">TOTAL: $${receipt.total.toFixed(2)}</div>
+        ${receipt.newStock !== undefined ? `<div class="info">Stock restante: ${receipt.newStock} unidades</div>` : ''}
+        <div class="footer">
+          <p>Gracias por su preferencia</p>
+          <p>PharmAssist AI System</p>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   return (
     <div className="mt-4 p-4 bg-gradient-to-br from-background to-secondary/50 rounded-xl border border-border shadow-sm">
@@ -125,9 +231,12 @@ function OrderReceiptCard({ receipt }: { receipt: OrderReceipt }) {
           {status.label}
         </span>
       </div>
-      <p className="text-xs text-muted-foreground mb-3 font-mono bg-muted/50 inline-block px-2 py-0.5 rounded">
-        #{receipt.orderId}
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-muted-foreground font-mono bg-muted/50 inline-block px-2 py-0.5 rounded">
+          #{receipt.orderId}
+        </p>
+        <p className="text-xs text-muted-foreground">{receiptDate}</p>
+      </div>
       <div className="space-y-2 bg-card/50 rounded-lg p-3 border border-border/50">
         {receipt.items.map((item, idx) => (
           <div
@@ -142,9 +251,36 @@ function OrderReceiptCard({ receipt }: { receipt: OrderReceipt }) {
           </div>
         ))}
       </div>
-      <div className="border-t border-border mt-3 pt-3 flex justify-between font-bold text-base text-foreground">
-        <span>Total</span>
-        <span className="text-primary tabular-nums">${receipt.total.toFixed(2)}</span>
+      {receipt.newStock !== undefined && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Stock restante: <span className="font-medium">{receipt.newStock} unidades</span>
+        </p>
+      )}
+      <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+        <div>
+          <span className="text-sm text-muted-foreground">Total</span>
+          <span className="text-lg font-bold text-primary tabular-nums ml-2">${receipt.total.toFixed(2)}</span>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={downloadTicket}
+            className="h-8 text-xs"
+          >
+            <Download className="w-3 h-3 mr-1" />
+            Descargar
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={printTicket}
+            className="h-8 text-xs"
+          >
+            <Printer className="w-3 h-3 mr-1" />
+            Imprimir
+          </Button>
+        </div>
       </div>
     </div>
   );

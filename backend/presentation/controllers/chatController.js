@@ -102,13 +102,15 @@ export const chatController = {
 
             logRequest(req, 'Solicitud procesada exitosamente', {
                 responseTime: `${responseTime}ms`,
-                replyLength: result.reply?.length || 0
+                replyLength: result.reply?.length || 0,
+                hasOrderReceipt: !!result.orderReceipt
             });
 
             res.json({
                 success: true,
                 reply: result.reply,
                 history: result.updatedHistory,
+                orderReceipt: result.orderReceipt || null,
                 requestId: req.requestId,
                 responseTime
             });

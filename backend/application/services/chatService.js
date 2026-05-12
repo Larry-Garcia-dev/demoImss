@@ -4,6 +4,7 @@ import { checkStock, processDeliveryOrder } from '../use-cases/inventoryUseCases
 
 export async function processUserMessage(userText, messageHistory = [], fileBase64URI = null) {
     const sessionId = `session_${Date.now().toString(36)}`;
+    let orderReceipt = null; // Store order receipt if generated
     
     logDebug('info', `[${sessionId}] Procesando mensaje de usuario`);
     
@@ -28,12 +29,18 @@ export async function processUserMessage(userText, messageHistory = [], fileBase
 REGLAS IMPORTANTES:
 1. SIEMPRE que el usuario pregunte por disponibilidad, stock, precio o información de medicamentos, DEBES usar la herramienta "consultar_inventario" para obtener datos reales de la base de datos.
 2. NUNCA inventes información sobre medicamentos. Solo proporciona datos obtenidos de las herramientas.
-3. Para generar órdenes de entrega, usa "generar_orden_entrega" con el ID del producto y la cantidad.
-4. Si el usuario menciona un medicamento, busca primero en el inventario antes de responder.
+3. Para generar órdenes de entrega, usa "generar_orden_entrega" con el NOMBRE del producto (productName) y la cantidad. NO uses IDs inventados.
+4. Si el usuario pide una orden, usa el nombre del medicamento directamente en productName.
 
 Tienes acceso a estas herramientas:
 - consultar_inventario: Busca medicamentos en la base de datos por nombre o principio activo
-- generar_orden_entrega: Procesa una orden descontando del inventario
+- generar_orden_entrega: Procesa una orden usando productName (nombre del medicamento) y quantity (cantidad)
+
+Cuando generes una orden exitosa, incluye en tu respuesta:
+- Nombre del producto
+- Cantidad ordenada  
+- Precio total
+- Stock restante
 
 Responde siempre en español y de forma profesional.` 
             },
@@ -94,12 +101,33 @@ Responde siempre en español y de forma profesional.`
                             resultsCount: Array.isArray(functionResult) ? functionResult.length : 1
                         });
                     } else if (functionName === 'generar_orden_entrega') {
-                        functionResult = await processDeliveryOrder(args.productId, args.quantity);
+                        // Support both productId and productName
+                        const productIdentifier = args.productId || args.productName;
+                        functionResult = await processDeliveryOrder(productIdentifier, args.quantity, args.productName);
                         logDebug('success', `[${sessionId}] Orden procesada`, {
-                            productId: args.productId,
+                            productIdentifier,
+                            productName: args.productName,
                             quantity: args.quantity,
                             success: functionResult.success
                         });
+                        
+                        // If order was successful, create receipt for frontend
+                        if (functionResult.success) {
+                            orderReceipt = {
+                                orderId: `ORD-${Date.now().toString(36).toUpperCase()}`,
+                                items: [{
+                                    name: functionResult.productName,
+                                    quantity: args.quantity,
+                                    price: functionResult.totalAmount,
+                                    unitPrice: functionResult.price
+                                }],
+                                total: functionResult.totalAmount,
+                                status: 'confirmed',
+                                date: new Date().toLocaleString('es-MX'),
+                                previousStock: functionResult.previousStock,
+                                newStock: functionResult.newStock
+                            };
+                        }
                     } else {
                         logDebug('warn', `[${sessionId}] Herramienta desconocida solicitada: ${functionName}`);
                         functionResult = { error: `Herramienta '${functionName}' no implementada` };
@@ -148,7 +176,8 @@ Responde siempre en español y de forma profesional.`
         
         return {
             reply: aiResponse.content,
-            updatedHistory: messages.filter(m => m.role !== 'system') // Ocultamos el system prompt al frontend
+            updatedHistory: messages.filter(m => m.role !== 'system'), // Ocultamos el system prompt al frontend
+            orderReceipt // Include order receipt if one was generated
         };
         
     } catch (error) {

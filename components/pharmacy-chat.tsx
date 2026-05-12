@@ -5,7 +5,7 @@ import { Activity, Menu, X, Sparkles, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatInput } from "./chat-input";
-import { ChatMessage, TypingIndicator, type Message } from "./chat-message";
+import { ChatMessage, TypingIndicator, type Message, type OrderReceipt } from "./chat-message";
 import { InventorySidebar, type InventoryItem } from "./inventory-sidebar";
 import { InventoryPanel } from "./inventory-panel";
 import { cn } from "@/lib/utils";

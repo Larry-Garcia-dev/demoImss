@@ -97,20 +97,40 @@ export async function getLowStockProducts() {
 }
 
 // 4. Descontar inventario y generar alerta si es necesario
-export async function processDeliveryOrder(productId, quantityToDeduct) {
-    log('inventory', `Procesando orden - Producto: ${productId}, Cantidad: ${quantityToDeduct}`);
+// Now accepts either productId OR productName for flexibility
+export async function processDeliveryOrder(productIdOrName, quantityToDeduct, productName = null) {
+    log('inventory', `Procesando orden - Producto: ${productName || productIdOrName}, Cantidad: ${quantityToDeduct}`);
     
     try {
-        // Validar inputs
-        if (!productId || productId <= 0) {
-            throw new Error('ID de producto inválido');
-        }
+        // Validar cantidad
         if (!quantityToDeduct || quantityToDeduct <= 0) {
             throw new Error('Cantidad a descontar debe ser mayor a 0');
         }
 
-        // Buscar el producto actual
-        const [productRows] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
+        let productRows;
+        
+        // If productName is provided, search by name first
+        if (productName) {
+            log('info', `Buscando producto por nombre: ${productName}`);
+            [productRows] = await pool.query(
+                'SELECT * FROM products WHERE name LIKE ? LIMIT 1', 
+                [`%${productName}%`]
+            );
+        } 
+        // If productIdOrName is a number, search by ID
+        else if (typeof productIdOrName === 'number' || !isNaN(parseInt(productIdOrName))) {
+            const id = parseInt(productIdOrName);
+            log('info', `Buscando producto por ID: ${id}`);
+            [productRows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        }
+        // Otherwise, treat it as a name
+        else {
+            log('info', `Buscando producto por nombre: ${productIdOrName}`);
+            [productRows] = await pool.query(
+                'SELECT * FROM products WHERE name LIKE ? LIMIT 1', 
+                [`%${productIdOrName}%`]
+            );
+        }
         
         if (productRows.length === 0) {
             log('error', `Producto no encontrado: ${productId}`);

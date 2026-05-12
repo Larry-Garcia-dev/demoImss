@@ -20,20 +20,24 @@ export const farmaciaTools = [
         type: "function",
         function: {
             name: "generar_orden_entrega",
-            description: "Genera una orden de entrega, descontando la cantidad solicitada del inventario de un medicamento específico usando su ID.",
+            description: "Genera una orden de entrega, descontando la cantidad solicitada del inventario. Puedes usar el nombre del producto o su ID. IMPORTANTE: Si no conoces el ID, usa el nombre del medicamento.",
             parameters: {
                 type: "object",
                 properties: {
+                    productName: {
+                        type: "string",
+                        description: "El nombre del medicamento (ej. Ibuprofeno, Paracetamol). Usa este campo si no conoces el ID."
+                    },
                     productId: {
                         type: "integer",
-                        description: "El ID numérico del medicamento en la base de datos."
+                        description: "El ID numérico del medicamento. Solo usa si conoces el ID exacto de una consulta previa."
                     },
                     quantity: {
                         type: "integer",
                         description: "La cantidad de unidades a descontar del inventario."
                     }
                 },
-                required: ["productId", "quantity"]
+                required: ["quantity"]
             }
         }
     }
