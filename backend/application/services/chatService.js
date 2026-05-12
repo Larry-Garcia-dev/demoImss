@@ -2,7 +2,7 @@ import { callQwen, logDebug } from '../../infrastructure/ai/qwenClient.js';
 import { farmaciaTools } from './aiToolsSchema.js';
 import { checkStock, processDeliveryOrder, updateInventoryStock } from '../use-cases/inventoryUseCases.js';
 
-export async function processUserMessage(userText, messageHistory = [], fileBase64URI = null) {
+export async function processUserMessage(userText, messageHistory = [], fileBase64URI = null, extractedDocumentText = null) {
     const sessionId = `session_${Date.now().toString(36)}`;
     let orderReceipt = null; // Store order receipt if generated
     
@@ -10,21 +10,46 @@ export async function processUserMessage(userText, messageHistory = [], fileBase
     
     try {
         // 1. Preparamos el contenido del usuario
-        let userContent = userText || "Analiza el archivo adjunto.";
+        let userContent = userText || "";
+        
+        // Check if there's extracted document text (from PDF)
+        if (extractedDocumentText) {
+            logDebug('debug', `[${sessionId}] Documento PDF detectado - texto extraído: ${extractedDocumentText.length} caracteres`);
+            
+            // Build the message with the document content embedded
+            const documentContext = `
+=== DOCUMENTO ADJUNTO ===
+${extractedDocumentText}
+=== FIN DEL DOCUMENTO ===
 
-        // Si hay un archivo, usamos el formato de array para "Vision" o Multimodal
-        if (fileBase64URI) {
-            logDebug('debug', `[${sessionId}] Archivo adjunto detectado`);
+${userText || "Por favor, analiza este documento y extrae la información relevante. Si es una receta médica, identifica los medicamentos, dosis y frecuencias."}`;
+            
+            userContent = documentContext;
+        }
+        // If it's an image, use multimodal format
+        else if (fileBase64URI) {
+            logDebug('debug', `[${sessionId}] Imagen adjunta detectada`);
             userContent = [
-                { type: "text", text: userText || "Por favor, extrae la información de esta receta o historia clínica." },
+                { type: "text", text: userText || "Por favor, extrae la información de esta receta o imagen médica." },
                 { type: "image_url", image_url: { url: fileBase64URI } }
             ];
+        }
+        // No file, just use the text
+        else if (!userContent) {
+            userContent = "Hola";
         }
 
         const messages = [
             { 
                 role: 'system', 
                 content: `Eres un asistente farmaceutico experto con acceso a la base de datos del inventario de la farmacia.
+
+MANEJO DE DOCUMENTOS:
+- Cuando el usuario adjunte un documento (receta médica, formula, historia clínica), el contenido del documento se incluye en el mensaje entre los marcadores "=== DOCUMENTO ADJUNTO ===" y "=== FIN DEL DOCUMENTO ===".
+- DEBES leer y analizar el contenido del documento automáticamente.
+- Extrae TODA la información relevante: medicamentos, dosis, frecuencias, indicaciones.
+- El documento permanece en la conversación hasta que el usuario inicie un nuevo chat.
+- Si el usuario hace preguntas relacionadas con el documento, usa la información que ya extrajiste.
 
 FUNCIONES PRINCIPALES:
 1. CONSULTA DE SINTOMAS: Cuando un paciente describa sus sintomas, debes:

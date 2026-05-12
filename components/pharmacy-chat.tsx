@@ -105,10 +105,18 @@ export function PharmacyChat() {
   }, []);
 
   const sendMessage = async (content: string, file: File | null) => {
+    // Build display content for the user message
+    let displayContent = content;
+    if (file && !content) {
+      displayContent = `[Documento adjunto: ${file.name}]`;
+    } else if (file && content) {
+      displayContent = `[Documento: ${file.name}]\n${content}`;
+    }
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: content || (file ? `[Archivo adjunto: ${file.name}]` : ""),
+      content: displayContent || "",
       timestamp: new Date(),
     };
 
