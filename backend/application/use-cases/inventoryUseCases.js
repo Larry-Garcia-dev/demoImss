@@ -133,7 +133,7 @@ export async function processDeliveryOrder(productIdOrName, quantityToDeduct, pr
         }
         
         if (productRows.length === 0) {
-            log('error', `Producto no encontrado: ${productId}`);
+            log('error', `Producto no encontrado: ${productName || productIdOrName}`);
             return { 
                 success: false, 
                 message: 'Producto no encontrado en la base de datos.',
@@ -163,7 +163,7 @@ export async function processDeliveryOrder(productIdOrName, quantityToDeduct, pr
 
         // Descontar la cantidad
         const newStock = product.stock - quantityToDeduct;
-        await pool.query('UPDATE products SET stock = ? WHERE id = ?', [newStock, productId]);
+        await pool.query('UPDATE products SET stock = ? WHERE id = ?', [newStock, product.id]);
         
         log('success', `Stock actualizado: ${product.name}`, {
             previousStock: product.stock,
@@ -194,7 +194,7 @@ export async function processDeliveryOrder(productIdOrName, quantityToDeduct, pr
         
     } catch (error) {
         log('error', 'Error procesando orden', {
-            productId,
+            productIdentifier: productName || productIdOrName,
             quantityToDeduct,
             error: error.message,
             stack: error.stack
