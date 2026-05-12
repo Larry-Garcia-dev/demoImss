@@ -185,7 +185,7 @@ export function PharmacyChat() {
       </div>
 
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
         <header className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <Button
@@ -221,16 +221,16 @@ export function PharmacyChat() {
         </header>
 
         {/* Messages */}
-        <ScrollArea ref={scrollRef} className="flex-1">
-          <div className="min-h-full flex flex-col justify-end">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea ref={scrollRef} className="h-full">
             <div className="py-4">
               {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
               {isLoading && <TypingIndicator />}
             </div>
-          </div>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
         {/* Inventory Panel */}
         <InventoryPanel items={inventory} />
