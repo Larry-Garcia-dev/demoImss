@@ -15,12 +15,19 @@ export interface Message {
 
 export interface OrderReceipt {
   orderId: string;
-  items: { name: string; quantity: number; price: number; unitPrice?: number }[];
+  items: { 
+    name: string; 
+    quantity: number; 
+    price: number; 
+    unitPrice?: number;
+    dosage?: string;
+    frequency?: string;
+    duration?: string;
+    instructions?: string;
+  }[];
   total: number;
   status: "confirmed" | "pending" | "delivered";
   date?: string;
-  previousStock?: number;
-  newStock?: number;
 }
 
 interface ChatMessageProps {
@@ -113,7 +120,7 @@ function OrderReceiptCard({ receipt }: { receipt: OrderReceipt }) {
   const downloadTicket = () => {
     const ticketContent = `
 ════════════════════════════════════════════
-           FARMACIA AI - RECIBO DE ORDEN
+           FARMACIA AI - FACTURA
 ════════════════════════════════════════════
 
 Orden #: ${receipt.orderId}
@@ -126,18 +133,24 @@ Estado: ${status.label}
 ${receipt.items.map(item => {
   const unitPrice = Number(item.unitPrice) || Number(item.price) / Number(item.quantity) || 0;
   const subtotal = Number(item.price) || 0;
-  return `${item.name}
+  let itemText = `${item.name}
   Cantidad: ${item.quantity} unidades
   Precio unitario: $${unitPrice.toFixed(2)}
   Subtotal: $${subtotal.toFixed(2)}`;
+  if (item.dosage || item.frequency || item.duration) {
+    itemText += `\n  --- INDICACIONES ---`;
+    if (item.dosage) itemText += `\n  Dosis: ${item.dosage}`;
+    if (item.frequency) itemText += `\n  Frecuencia: ${item.frequency}`;
+    if (item.duration) itemText += `\n  Duracion: ${item.duration}`;
+    if (item.instructions) itemText += `\n  Notas: ${item.instructions}`;
+  }
+  return itemText;
 }).join('\n\n')}
 
 ────────────────────────────────────────────
-TOTAL: $${receipt.total.toFixed(2)}
+TOTAL: $${Number(receipt.total || 0).toFixed(2)}
 ────────────────────────────────────────────
-${receipt.newStock !== undefined ? `
-Stock restante: ${receipt.newStock} unidades
-` : ''}
+
 ════════════════════════════════════════════
         Gracias por su preferencia
           PharmAssist AI System
@@ -183,7 +196,7 @@ Stock restante: ${receipt.newStock} unidades
       <body>
         <div class="header">
           <div class="title">FARMACIA AI</div>
-          <div class="subtitle">Recibo de Orden</div>
+          <div class="subtitle">Factura de Venta</div>
         </div>
         <div class="info">
           <div><strong>Orden:</strong> #${receipt.orderId}</div>
@@ -199,11 +212,18 @@ Stock restante: ${receipt.newStock} unidades
               <div class="item-name">${item.name}</div>
               <div class="item-detail">Cant: ${item.quantity} x $${unitPrice.toFixed(2)}</div>
               <div class="item-detail">Subtotal: $${subtotal.toFixed(2)}</div>
+              ${item.dosage || item.frequency || item.duration ? `
+              <div class="item-detail" style="margin-top:4px;border-top:1px dotted #ccc;padding-top:4px;">
+                ${item.dosage ? `<div>Dosis: ${item.dosage}</div>` : ''}
+                ${item.frequency ? `<div>Frecuencia: ${item.frequency}</div>` : ''}
+                ${item.duration ? `<div>Duracion: ${item.duration}</div>` : ''}
+                ${item.instructions ? `<div>Notas: ${item.instructions}</div>` : ''}
+              </div>
+              ` : ''}
             </div>
           `}).join('')}
         </div>
         <div class="total">TOTAL: $${Number(receipt.total || 0).toFixed(2)}</div>
-        ${receipt.newStock !== undefined ? `<div class="info">Stock restante: ${receipt.newStock} unidades</div>` : ''}
         <div class="footer">
           <p>Gracias por su preferencia</p>
           <p>PharmAssist AI System</p>
@@ -223,7 +243,7 @@ Stock restante: ${receipt.newStock} unidades
             <span className="text-success text-sm">📋</span>
           </div>
           <h4 className="font-semibold text-foreground text-sm">
-            Recibo Digital
+            Factura Digital
           </h4>
         </div>
         <span
@@ -242,25 +262,28 @@ Stock restante: ${receipt.newStock} unidades
         </p>
         <p className="text-xs text-muted-foreground">{receiptDate}</p>
       </div>
-      <div className="space-y-2 bg-card/50 rounded-lg p-3 border border-border/50">
+      <div className="space-y-3 bg-card/50 rounded-lg p-3 border border-border/50">
         {receipt.items.map((item, idx) => (
-          <div
-            key={idx}
-            className="flex justify-between text-sm text-foreground"
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              {item.name} <span className="text-muted-foreground">x{item.quantity}</span>
-            </span>
-            <span className="font-medium tabular-nums">${Number(item.price || 0).toFixed(2)}</span>
+          <div key={idx} className="border-b border-border/30 pb-2 last:border-0 last:pb-0">
+            <div className="flex justify-between text-sm text-foreground">
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                {item.name} <span className="text-muted-foreground">x{item.quantity}</span>
+              </span>
+              <span className="font-medium tabular-nums">${Number(item.price || 0).toFixed(2)}</span>
+            </div>
+            {(item.dosage || item.frequency || item.duration) && (
+              <div className="mt-1 ml-4 text-xs text-muted-foreground bg-muted/30 rounded p-2">
+                {item.dosage && <div>Dosis: {item.dosage}</div>}
+                {item.frequency && <div>Frecuencia: {item.frequency}</div>}
+                {item.duration && <div>Duracion: {item.duration}</div>}
+                {item.instructions && <div className="text-primary/80">Nota: {item.instructions}</div>}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {receipt.newStock !== undefined && (
-        <p className="text-xs text-muted-foreground mt-2">
-          Stock restante: <span className="font-medium">{receipt.newStock} unidades</span>
-        </p>
-      )}
+
       <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
         <div>
           <span className="text-sm text-muted-foreground">Total</span>

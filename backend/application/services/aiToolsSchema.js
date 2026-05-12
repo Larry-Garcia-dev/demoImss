@@ -20,24 +20,40 @@ export const farmaciaTools = [
         type: "function",
         function: {
             name: "generar_orden_entrega",
-            description: "Genera una orden de entrega, descontando la cantidad solicitada del inventario. Puedes usar el nombre del producto o su ID. IMPORTANTE: Si no conoces el ID, usa el nombre del medicamento.",
+            description: "Genera una orden de entrega con prescripcion medica. Incluye indicaciones de dosificacion para el paciente.",
             parameters: {
                 type: "object",
                 properties: {
                     productName: {
                         type: "string",
-                        description: "El nombre del medicamento (ej. Ibuprofeno, Paracetamol). Usa este campo si no conoces el ID."
+                        description: "El nombre del medicamento (ej. Ibuprofeno 400mg, Paracetamol 500mg)."
                     },
                     productId: {
                         type: "integer",
-                        description: "El ID numérico del medicamento. Solo usa si conoces el ID exacto de una consulta previa."
+                        description: "El ID numerico del medicamento. Solo usa si conoces el ID exacto."
                     },
                     quantity: {
                         type: "integer",
-                        description: "La cantidad de unidades a descontar del inventario."
+                        description: "La cantidad de unidades/tabletas/capsulas a dispensar."
+                    },
+                    dosage: {
+                        type: "string",
+                        description: "La dosis recomendada (ej. '500mg', '1 tableta', '10ml')."
+                    },
+                    frequency: {
+                        type: "string",
+                        description: "Frecuencia de toma (ej. 'cada 8 horas', 'cada 12 horas', '3 veces al dia')."
+                    },
+                    duration: {
+                        type: "string",
+                        description: "Duracion del tratamiento (ej. 'por 5 dias', 'por 7 dias', 'por 2 semanas')."
+                    },
+                    instructions: {
+                        type: "string",
+                        description: "Indicaciones especiales (ej. 'tomar con alimentos', 'antes de dormir', 'no mezclar con alcohol')."
                     }
                 },
-                required: ["quantity"]
+                required: ["productName", "quantity"]
             }
         }
     },

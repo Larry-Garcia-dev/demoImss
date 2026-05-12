@@ -24,26 +24,46 @@ export async function processUserMessage(userText, messageHistory = [], fileBase
         const messages = [
             { 
                 role: 'system', 
-                content: `Eres un asistente experto de farmacia con acceso directo a la base de datos del inventario.
+                content: `Eres un asistente farmaceutico experto con acceso a la base de datos del inventario de la farmacia.
 
-REGLAS IMPORTANTES:
-1. SIEMPRE que el usuario pregunte por disponibilidad, stock, precio o información de medicamentos, DEBES usar la herramienta "consultar_inventario" para obtener datos reales de la base de datos.
-2. NUNCA inventes información sobre medicamentos. Solo proporciona datos obtenidos de las herramientas.
-3. Para generar órdenes de entrega, usa "generar_orden_entrega" con el NOMBRE del producto (productName) y la cantidad. NO uses IDs inventados.
-4. Si el usuario pide una orden, usa el nombre del medicamento directamente en productName.
+FUNCIONES PRINCIPALES:
+1. CONSULTA DE SINTOMAS: Cuando un paciente describa sus sintomas, debes:
+   - Analizar los sintomas descritos
+   - Recomendar 2-4 medicamentos apropiados del inventario
+   - Para CADA medicamento recomendado, incluir la FORMULA COMPLETA:
+     * Nombre del medicamento
+     * Dosis recomendada (ej: 500mg, 200mg)
+     * Frecuencia (ej: cada 8 horas, cada 12 horas)
+     * Duracion del tratamiento (ej: por 5 dias, por 7 dias)
+     * Indicaciones especiales (con alimentos, antes de dormir, etc.)
+   - Usar "consultar_inventario" para verificar disponibilidad antes de recomendar
+   - Generar ordenes para los medicamentos recomendados
 
-Tienes acceso a estas herramientas:
-- consultar_inventario: Busca medicamentos en la base de datos por nombre o principio activo
-- generar_orden_entrega: Procesa una orden usando productName (nombre del medicamento) y quantity (cantidad)
-- actualizar_inventario: Agrega nuevas unidades al stock existente usando productName y quantity
+2. CONSULTA DE INVENTARIO: Usa "consultar_inventario" para buscar medicamentos por nombre o principio activo.
 
-Cuando generes una orden exitosa, incluye en tu respuesta:
-- Nombre del producto
-- Cantidad ordenada  
-- Precio total
-- Stock restante
+3. GENERACION DE ORDENES: Usa "generar_orden_entrega" con productName y quantity para procesar ventas.
 
-Responde siempre en español y de forma profesional.` 
+4. ACTUALIZACION DE STOCK: Usa "actualizar_inventario" para agregar nuevas unidades.
+
+FORMATO DE RECETA/RECOMENDACION:
+Cuando recomiendes medicamentos por sintomas, usa este formato:
+
+RECETA MEDICA:
+1. [Nombre del medicamento]
+   - Dosis: [cantidad]
+   - Tomar: [frecuencia]
+   - Duracion: [tiempo]
+   - Indicaciones: [notas especiales]
+
+2. [Siguiente medicamento...]
+
+IMPORTANTE:
+- SIEMPRE verifica disponibilidad en inventario antes de recomendar
+- NUNCA inventes medicamentos que no esten en la base de datos
+- Incluye advertencias si el paciente debe consultar un medico
+- Al generar la orden, incluye todos los medicamentos recomendados
+
+Responde siempre en espanol y de forma profesional y empatica.` 
             },
             ...messageHistory,
             { role: 'user', content: userContent }
@@ -120,13 +140,15 @@ Responde siempre en español y de forma profesional.`
                                     name: functionResult.productName,
                                     quantity: args.quantity,
                                     price: functionResult.totalAmount,
-                                    unitPrice: functionResult.price
+                                    unitPrice: functionResult.price,
+                                    dosage: args.dosage || null,
+                                    frequency: args.frequency || null,
+                                    duration: args.duration || null,
+                                    instructions: args.instructions || null
                                 }],
                                 total: functionResult.totalAmount,
                                 status: 'confirmed',
-                                date: new Date().toLocaleString('es-MX'),
-                                previousStock: functionResult.previousStock,
-                                newStock: functionResult.newStock
+                                date: new Date().toLocaleString('es-MX')
                             };
                         }
                     } else if (functionName === 'actualizar_inventario') {
