@@ -1,5 +1,6 @@
 import { processUserMessage } from '../../application/services/chatService.js';
 import { bufferToBase64URI } from '../../infrastructure/utils/fileConverter.js';
+import { extractTextFromPDF, isPDF, isImage } from '../../infrastructure/utils/pdfExtractor.js';
 
 // Debug logger
 function logRequest(req, message, data = null) {
@@ -47,20 +48,51 @@ export const chatController = {
                 });
             }
 
-            // Convertimos el archivo a Base64 si existe
+            // Process file based on type (PDF vs Image)
             let fileBase64URI = null;
-            try {
-                fileBase64URI = bufferToBase64URI(file);
-            } catch (conversionError) {
-                logRequest(req, 'Error convirtiendo archivo a Base64', {
-                    error: conversionError.message
-                });
-                return res.status(400).json({
-                    success: false,
-                    error: 'Error procesando el archivo adjunto. Verifica que sea una imagen o PDF válido.',
-                    errorCode: 'FILE_CONVERSION_ERROR',
-                    requestId: req.requestId
-                });
+            let extractedDocumentText = null;
+            
+            if (file) {
+                try {
+                    if (isPDF(file.mimetype)) {
+                        // Extract text from PDF
+                        logRequest(req, 'Extrayendo texto del PDF...');
+                        const pdfResult = await extractTextFromPDF(file.buffer);
+                        
+                        if (pdfResult.success && pdfResult.text) {
+                            extractedDocumentText = pdfResult.text;
+                            logRequest(req, 'Texto extraído del PDF exitosamente', {
+                                pages: pdfResult.pages,
+                                textLength: pdfResult.text.length,
+                                preview: pdfResult.text.substring(0, 200) + '...'
+                            });
+                        } else {
+                            logRequest(req, 'No se pudo extraer texto del PDF', {
+                                error: pdfResult.error
+                            });
+                            // Still try to send as base64 for multimodal processing
+                            fileBase64URI = bufferToBase64URI(file);
+                        }
+                    } else if (isImage(file.mimetype)) {
+                        // For images, convert to base64 for vision processing
+                        fileBase64URI = bufferToBase64URI(file);
+                        logRequest(req, 'Imagen convertida a Base64');
+                    } else {
+                        logRequest(req, 'Tipo de archivo no soportado', {
+                            mimetype: file.mimetype
+                        });
+                    }
+                } catch (conversionError) {
+                    logRequest(req, 'Error procesando archivo', {
+                        error: conversionError.message
+                    });
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Error procesando el archivo adjunto. Verifica que sea una imagen o PDF válido.',
+                        errorCode: 'FILE_CONVERSION_ERROR',
+                        requestId: req.requestId
+                    });
+                }
             }
 
             // Parse history if it's a string (from FormData)
@@ -79,7 +111,7 @@ export const chatController = {
 
             // Procesamos la petición
             logRequest(req, 'Procesando mensaje con servicio de chat...');
-            const result = await processUserMessage(message, parsedHistory, fileBase64URI);
+            const result = await processUserMessage(message, parsedHistory, fileBase64URI, extractedDocumentText);
 
             const responseTime = Date.now() - startTime;
             
