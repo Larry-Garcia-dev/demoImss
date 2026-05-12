@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
-// Use the INTERNATIONAL endpoint (dashscope-intl) with native DashScope format
-const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+// Use the INTERNATIONAL endpoint with OpenAI-compatible format for better tool support
+const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 
 // Debug logger helper
 function logDebug(level, message, data = null) {
@@ -52,24 +52,30 @@ export async function callQwen(messages, tools = []) {
         throw error;
     }
 
-    // Build payload using DashScope native format (NOT OpenAI compatible format)
+    // Build payload using OpenAI-compatible format for better tool calling support
     const payload = {
         model: 'qwen-max',
-        input: {
-            messages: messages
-        },
-        parameters: {
-            result_format: 'message'
-        }
+        messages: messages
     };
 
     // Add tools if provided (for function calling)
-    if (tools.length > 0) {
-        payload.input.tools = tools;
-        logDebug('debug', `[${requestId}] Herramientas disponibles:`, tools.map(t => t.function?.name));
+    if (tools && tools.length > 0) {
+        payload.tools = tools;
+        payload.tool_choice = 'auto';
+        logDebug('debug', `[${requestId}] Herramientas configuradas:`, tools.map(t => t.function?.name));
     }
 
     try {
+        // Log the full payload for debugging
+        logDebug('debug', `[${requestId}] Payload completo:`, {
+            model: payload.model,
+            messagesCount: payload.messages.length,
+            hasTools: !!payload.tools,
+            toolsCount: payload.tools?.length || 0,
+            toolNames: payload.tools?.map(t => t.function?.name) || [],
+            toolChoice: payload.tool_choice
+        });
+        
         logDebug('info', `[${requestId}] Enviando request a ${QWEN_API_URL}`);
         const startTime = Date.now();
         
@@ -124,24 +130,36 @@ export async function callQwen(messages, tools = []) {
         const data = await response.json();
         
         logDebug('debug', `[${requestId}] Respuesta raw de DashScope:`, {
-            hasOutput: !!data.output,
-            hasChoices: !!data.output?.choices,
-            requestId: data.request_id
+            hasChoices: !!data.choices,
+            choicesLength: data.choices?.length || 0,
+            id: data.id
         });
 
-        // DashScope native format: response is in data.output.choices[0].message
-        if (!data.output || !data.output.choices || !data.output.choices[0] || !data.output.choices[0].message) {
+        // OpenAI-compatible format: response is in data.choices[0].message
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             logDebug('error', `[${requestId}] Respuesta inesperada de Qwen`, data);
             throw new Error('Formato de respuesta inesperado de Qwen API');
         }
 
-        const aiMessage = data.output.choices[0].message;
+        const aiMessage = data.choices[0].message;
+        
+        // Log full response for debugging tool calls
+        logDebug('debug', `[${requestId}] Mensaje AI completo:`, {
+            role: aiMessage.role,
+            content: aiMessage.content,
+            tool_calls: aiMessage.tool_calls || 'ninguno'
+        });
         
         logDebug('success', `[${requestId}] Respuesta procesada correctamente`, {
             hasContent: !!aiMessage.content,
-            contentPreview: aiMessage.content?.substring(0, 100) + '...',
+            contentPreview: aiMessage.content?.substring(0, 100) + (aiMessage.content?.length > 100 ? '...' : ''),
             hasToolCalls: !!(aiMessage.tool_calls && aiMessage.tool_calls.length > 0),
-            toolCalls: aiMessage.tool_calls?.map(tc => tc.function?.name) || [],
+            toolCallsCount: aiMessage.tool_calls?.length || 0,
+            toolCalls: aiMessage.tool_calls?.map(tc => ({
+                id: tc.id,
+                name: tc.function?.name,
+                args: tc.function?.arguments
+            })) || [],
             usage: data.usage
         });
 
