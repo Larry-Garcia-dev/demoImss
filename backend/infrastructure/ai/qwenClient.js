@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
-const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+// Use the INTERNATIONAL endpoint (dashscope-intl) with native DashScope format
+const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
 
 // Debug logger helper
 function logDebug(level, message, data = null) {
@@ -38,7 +39,7 @@ function validateApiKey() {
 export async function callQwen(messages, tools = []) {
     const requestId = `req_${Date.now().toString(36)}`;
     
-    logDebug('info', `[${requestId}] Iniciando llamada a Qwen API`);
+    logDebug('info', `[${requestId}] Iniciando llamada a Qwen API (International)`);
     logDebug('debug', `[${requestId}] Mensajes:`, { 
         messageCount: messages.length,
         lastMessage: messages[messages.length - 1]?.role 
@@ -51,13 +52,20 @@ export async function callQwen(messages, tools = []) {
         throw error;
     }
 
+    // Build payload using DashScope native format (NOT OpenAI compatible format)
     const payload = {
         model: 'qwen-max',
-        messages: messages,
+        input: {
+            messages: messages
+        },
+        parameters: {
+            result_format: 'message'
+        }
     };
 
+    // Add tools if provided (for function calling)
     if (tools.length > 0) {
-        payload.tools = tools;
+        payload.input.tools = tools;
         logDebug('debug', `[${requestId}] Herramientas disponibles:`, tools.map(t => t.function?.name));
     }
 
@@ -107,7 +115,7 @@ export async function callQwen(messages, tools = []) {
                     errorMessage = 'Servicio de Qwen no disponible temporalmente';
                     break;
                 default:
-                    errorMessage = `Error en la API de Qwen: ${response.status} - ${errorData?.message || response.statusText}`;
+                    errorMessage = `Error en la API de Qwen: ${response.status} - ${errorData?.error?.message || errorData?.message || response.statusText}`;
             }
             
             throw new Error(errorMessage);
@@ -115,18 +123,26 @@ export async function callQwen(messages, tools = []) {
 
         const data = await response.json();
         
-        // Validate response structure
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        logDebug('debug', `[${requestId}] Respuesta raw de DashScope:`, {
+            hasOutput: !!data.output,
+            hasChoices: !!data.output?.choices,
+            requestId: data.request_id
+        });
+
+        // DashScope native format: response is in data.output.choices[0].message
+        if (!data.output || !data.output.choices || !data.output.choices[0] || !data.output.choices[0].message) {
             logDebug('error', `[${requestId}] Respuesta inesperada de Qwen`, data);
             throw new Error('Formato de respuesta inesperado de Qwen API');
         }
 
-        const aiMessage = data.choices[0].message;
+        const aiMessage = data.output.choices[0].message;
         
         logDebug('success', `[${requestId}] Respuesta procesada correctamente`, {
             hasContent: !!aiMessage.content,
+            contentPreview: aiMessage.content?.substring(0, 100) + '...',
             hasToolCalls: !!(aiMessage.tool_calls && aiMessage.tool_calls.length > 0),
-            toolCalls: aiMessage.tool_calls?.map(tc => tc.function?.name) || []
+            toolCalls: aiMessage.tool_calls?.map(tc => tc.function?.name) || [],
+            usage: data.usage
         });
 
         return aiMessage;
@@ -142,7 +158,7 @@ export async function callQwen(messages, tools = []) {
         }
         
         // Re-throw known errors
-        if (error.message.includes('API')) {
+        if (error.message.includes('API') || error.message.includes('Qwen')) {
             throw error;
         }
         
