@@ -10,6 +10,9 @@ import { InventorySidebar, type InventoryItem } from "./inventory-sidebar";
 import { InventoryPanel } from "./inventory-panel";
 import { cn } from "@/lib/utils";
 
+// Backend API URL - uses Express backend on port 3000
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
+
 // Category mapping based on active principle
 const getCategoryFromPrinciple = (principle: string): string => {
   const categories: Record<string, string> = {
@@ -44,10 +47,10 @@ export function PharmacyChat() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch inventory from API
+  // Fetch inventory from Express backend API
   const fetchInventory = useCallback(async () => {
     try {
-      const response = await fetch("/api/inventory");
+      const response = await fetch(`${BACKEND_URL}/api/inventory`);
       const data = await response.json();
       if (data.success && data.inventory) {
         const formattedInventory: InventoryItem[] = data.inventory.map(
@@ -107,7 +110,7 @@ export function PharmacyChat() {
       
       formData.append("history", JSON.stringify(history));
 
-      const response = await fetch("/api/chat", {
+      const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: "POST",
         body: formData,
       });

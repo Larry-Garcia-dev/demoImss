@@ -70,6 +70,11 @@ export async function getAllProducts() {
     }
 }
 
+// Alias for getFullInventory (used by inventory routes)
+export async function getFullInventory() {
+    return getAllProducts();
+}
+
 // 3. Obtener productos con stock bajo
 export async function getLowStockProducts() {
     log('inventory', 'Consultando productos con stock bajo');
